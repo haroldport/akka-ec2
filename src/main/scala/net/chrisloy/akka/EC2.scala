@@ -19,8 +19,9 @@ class EC2(scaling: AmazonAutoScalingClient, ec2: AmazonEC2Client) {
   val isRunning: Instance => Boolean = _.getState.getName == InstanceStateName.Running.toString
 
   private def instanceId = {
-    val conn = new URL("http://169.254.169.254/latest/meta-data/instance-id").openConnection
+    val conn = new URL("http://54.89.35.191/latest/meta-data/instance-id").openConnection
     val in = new BufferedReader(new InputStreamReader(conn.getInputStream))
+    println(s"========<<<<>>>>>>---========== ${conn} , $in, --> ${in.readLine()}")
     try in.readLine() finally in.close()
   }
 
@@ -35,6 +36,7 @@ class EC2(scaling: AmazonAutoScalingClient, ec2: AmazonEC2Client) {
     val result = scaling describeAutoScalingInstances new DescribeAutoScalingInstancesRequest {
       setInstanceIds(instanceId :: Nil)
     }
+    println(s"result head ----->>>>>>>>>> ${result.getAutoScalingInstances.head.getAutoScalingGroupName}")
     result.getAutoScalingInstances.head.getAutoScalingGroupName
   }
 

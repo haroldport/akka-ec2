@@ -1,17 +1,18 @@
 package net.chrisloy.akka
 
-import com.amazonaws.auth.InstanceProfileCredentialsProvider
-import com.amazonaws.regions.{Regions, Region}
+import com.amazonaws.auth.{DefaultAWSCredentialsProviderChain, InstanceProfileCredentialsProvider}
+import com.amazonaws.regions.{Region, Regions}
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient
 import com.amazonaws.services.ec2.AmazonEC2Client
-import com.typesafe.config.{ConfigValueFactory, ConfigFactory}
+import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
+
 import scala.collection.JavaConversions._
 
 object AkkaConfig {
 
   private lazy val ec2 = {
-    val credentials = new InstanceProfileCredentialsProvider
-    val region = Region.getRegion(Regions.EU_WEST_1)
+    val credentials = new DefaultAWSCredentialsProviderChain
+    val region = Region.getRegion(Regions.US_EAST_1)
     val scalingClient = new AmazonAutoScalingClient(credentials) { setRegion(region) }
     val ec2Client = new AmazonEC2Client(credentials) { setRegion(region) }
     new EC2(scalingClient, ec2Client)
@@ -24,7 +25,10 @@ object AkkaConfig {
       println("Running with local configuration")
       ("localhost", "localhost" :: Nil, sys.props("akka.port"))
     } else {
-      println("Using EC2 autoscaling configuration")
+      println("Using EC2 autoscaling configuration ====>><<")
+      println(s"host  --> ${ec2.currentIp}")
+      println(s"siblings  --> ${ec2.siblingIps}")
+      println(s"port  --> 2551")
       (ec2.currentIp, ec2.siblingIps, "2551")
     }
 
@@ -32,9 +36,9 @@ object AkkaConfig {
 
   private val overrideConfig =
     ConfigFactory.empty()
-    .withValue("akka.remote.netty.tcp.hostname", ConfigValueFactory.fromAnyRef(host))
-    .withValue("akka.remote.netty.tcp.port", ConfigValueFactory.fromAnyRef(port))
-    .withValue("akka.cluster.seed-nodes", ConfigValueFactory.fromIterable(seeds))
+      .withValue("akka.remote.netty.tcp.hostname", ConfigValueFactory.fromAnyRef(host))
+      .withValue("akka.remote.netty.tcp.port", ConfigValueFactory.fromAnyRef(port))
+      .withValue("akka.cluster.seed-nodes", ConfigValueFactory.fromIterable(seeds))
 
   private val defaults = ConfigFactory.load()
 
